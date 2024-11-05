@@ -28,6 +28,7 @@
       <input type="file" accept="image/*" oninput="selectImage(event)">
       <input class="resolutionIpt" type="number" placeholder="像素大小" oninput="changeResolution(event.target.value)">
       <button onclick="getPixivImage()">生成像素风</button>
+      <button onclick="donwload()">下载图片</button>
     </div>
 
     <div class="body">
@@ -45,6 +46,7 @@
   <script>
     let url = ''
     let resolution = 3 // 3*3
+
     // 像素化后的所有颜色
     const allColor = new Set()
     document.querySelector('.resolutionIpt').value = resolution
@@ -102,7 +104,6 @@
         }
         ctx.putImageData(cvData, 0, 0)
         marchColor()
-
       }
     }
 
@@ -138,6 +139,21 @@
 
     var marchColor = () => {
       // TODO
+    }
+
+    var donwload = () => {
+      let myCanvas = document.getElementById('myCv')
+      myCanvas.toBlob((blob) => {
+        const uri = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.style.display = 'none';
+        a.href = uri;
+        a.download = '像素图'
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(uri)
+      })
     }
 
     // 仅log一次
