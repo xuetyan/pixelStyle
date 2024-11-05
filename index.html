@@ -76,6 +76,7 @@
       document.querySelector('img').src = url
     }
 
+    // 生成canvas
     const getPixivImage = () => {
       if (!url) {
         alert('请先选择图片')
@@ -126,7 +127,6 @@
           cvData.data[index] = newData[index]
         }
         ctx.putImageData(cvData, 0, 0)
-        marchColor()
       }
     }
 
@@ -160,12 +160,14 @@
       }
     }
 
+    // 匹配绣线颜色-计算欧氏距离
     const calc = (c1, c2) => {
       let r = 0
       r = Math.sqrt((c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1]) + (c1[2] - c2[2]) * (c1[2] - c2[2]))
       return r
     }
 
+    // 匹配绣线颜色-遍历寻找最接近的颜色
     const marchFunc = (c) => {
       let r = '' // dmc
       let distance = 999 // 理论最大值不超过442
@@ -179,6 +181,7 @@
       return r
     }
 
+    // 匹配绣线颜色-入口
     var marchColor = () => {
       const ac = [...allColor]
       for (const color of ac) {
