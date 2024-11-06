@@ -19,10 +19,6 @@
       display: none;
     }
 
-    .mock {
-      display: none;
-    }
-
     .body {
       display: flex;
       flex-wrap: nowrap;
@@ -81,7 +77,7 @@
 
 <body>
   <div class="main">
-    <div class="mock"></div>
+    <div class="mock hide"></div>
     <div class="head">
       <input type="file" accept="image/*" oninput="selectImage(event)">
       <input class="resolutionIpt" type="number" placeholder="像素大小" oninput="changeResolution(event.target.value)">
