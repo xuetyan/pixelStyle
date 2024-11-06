@@ -4085,13 +4085,13 @@ var colors = [
       "dmc": "3866",
       "desc": "Mocha Brown - ULT VY LT"
   },
-  {
-      "color": [
-          255,
-          255,
-          255
-      ],
-      "dmc": "B5200",
-      "desc": "Bright White"
-  }
+  // {
+  //     "color": [
+  //         255,
+  //         255,
+  //         255
+  //     ],
+  //     "dmc": "B5200",
+  //     "desc": "Bright White"
+  // }
 ]

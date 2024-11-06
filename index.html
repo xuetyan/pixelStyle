@@ -11,6 +11,14 @@
       padding: 0;
     }
 
+    .show {
+      display: inline-block;
+    }
+
+    .hide {
+      display: none;
+    }
+
     .mock {
       display: none;
     }
@@ -22,6 +30,34 @@
 
     .body>section:first-child {
       margin-right: 12px;
+    }
+
+    dialog::backdrop {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    dialog {
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      width: 660px;
+    }
+
+    table,
+    thead,
+    tbody {
+      width: 100%;
+    }
+
+    th,
+    tr {
+      text-align: left;
+    }
+
+    .color-block {
+      height: 18px;
+      border-radius: 4px;
+      width: 70px;
     }
   </style>
 </head>
@@ -36,18 +72,33 @@
       <button onclick="getPixivImage()">生成像素风</button>
       <button onclick="marchColor()">开始匹配颜色</button>
       <button onclick="donwload()">下载图片</button>
+      <button class="show-color show" onclick="showColorList()">显示使用到的颜色</button>
     </div>
 
     <div class="body">
       <section>
-        <h3 class="title">Image</h3>
+        <h3 class="image-title">Image</h3>
         <img src="" alt="" srcset="">
       </section>
       <section>
-        <h3>Canvas</h3>
+        <h3 class="canvas-title">Canvas</h3>
         <canvas id="myCv"></canvas>
       </section>
     </div>
+
+    <dialog>
+      <table>
+        <thead>
+          <tr>
+            <th>编号</th>
+            <th>描述</th>
+            <th>色值</th>
+            <th>颜色</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </dialog>
   </div>
 
   <script>
@@ -58,7 +109,7 @@
     // 像素化后的所有颜色
     const allColor = new Set()
     // 匹配颜色列表后的颜色
-    const newColors = []
+    const newColors = new Set()
 
     document.querySelector('.resolutionIpt').value = resolution
     document.querySelector('.multi').value = multify
@@ -70,10 +121,29 @@
       multify = +val
     }
 
+    // 选择图片
     const selectImage = (e) => {
       const imageData = e.target.files[0]
       url = window.URL.createObjectURL(imageData)
       document.querySelector('img').src = url
+      toggleShowColorBtn(false)
+    }
+
+    // 控制显示颜色列表按钮
+    const toggleShowColorBtn = (flag) => {
+      const cl = document.querySelector('.show-color').classList
+      if (flag) {
+        cl.add('show')
+        cl.remove('hide')
+      } else {
+        cl.add('hide')
+        cl.remove('show')
+      }
+    }
+
+    const showColorList = () => {
+      const dialog = document.querySelector('dialog')
+      dialog.showModal()
     }
 
     // 生成canvas
@@ -89,6 +159,8 @@
       let myCanvas = document.getElementById('myCv')
       var ctx = myCanvas.getContext('2d')
 
+      allColor.clear()
+
       var myImage = new Image()
       myImage.src = url
       myImage.setAttribute('crossOrigin', 'anonymous')
@@ -96,7 +168,9 @@
         myCanvas.width = myImage.width * multi
         myCanvas.height = myImage.height * multi
         // 显示原图分辨率
-        document.querySelector('.title').innerText = document.querySelector('.title').innerText.replace(/([a-zA-Z]+).*/g, '$1') + ` ${myImage.width}*${myImage.height}`
+        document.querySelector('.image-title').innerText = document.querySelector('.image-title').innerText.replace(/([a-zA-Z]+).*/g, '$1') + ` ${myImage.width}*${myImage.height}`
+        // canvas分辨率
+        document.querySelector('.canvas-title').innerText = document.querySelector('.canvas-title').innerText.replace(/([a-zA-Z]+).*/g, '$1') + ` ${myCanvas.width}*${myCanvas.height}`
 
         ctx.drawImage(myImage, 0, 0, myImage.width, myImage.height, 0, 0, myCanvas.width, myCanvas.height)
 
@@ -118,7 +192,7 @@
                 arr.push(allDots[(w + j) + (h + i) * allW])
               }
             }
-            const newDot = handler(arr)
+            handler(arr)
           }
         }
 
@@ -143,17 +217,17 @@
           b += dot[2]
           a += dot[3]
         }
-        r /= realNum
-        g /= realNum
-        b /= realNum
-        a /= realNum
-        allColor.add([Math.round(r), Math.round(g), Math.round(b), Math.round(a)].toString())
+        r = Math.round(r / realNum)
+        g = Math.round(g / realNum)
+        b = Math.round(b / realNum)
+        a = Math.round(a / realNum)
+        allColor.add([r, g, b, a].toString())
         for (const dot of data) {
           if (dot === undefined || dot[0] === undefined) break
-          dot[0] = Math.round(r)
-          dot[1] = Math.round(g)
-          dot[2] = Math.round(b)
-          dot[3] = Math.round(a)
+          dot[0] = r
+          dot[1] = g
+          dot[2] = b
+          dot[3] = a
         }
       } catch {
         console.warn(data)
@@ -163,7 +237,7 @@
     // 匹配绣线颜色-计算欧氏距离
     const calc = (c1, c2) => {
       let r = 0
-      r = Math.sqrt((c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1]) + (c1[2] - c2[2]) * (c1[2] - c2[2]))
+      r = Math.sqrt(((c1[0] - c2[0]) * (c1[0] - c2[0])) + ((c1[1] - c2[1]) * (c1[1] - c2[1])) + ((c1[2] - c2[2]) * (c1[2] - c2[2])))
       return r
     }
 
@@ -172,21 +246,40 @@
       let r = '' // dmc
       let distance = 999 // 理论最大值不超过442
       for (const e of colors) {
-        const n_d = calc(c, e.color)
-        if (n_d === 0) {
-          return e
+        const _distance = calc(c, e.color)
+        if (_distance === 0) {
+          return JSON.stringify(e)
         }
-        r = n_d < distance ? e : r
+        if (_distance < distance) {
+          distance = _distance
+          r = e
+        }
       }
-      return r
+      return JSON.stringify(r)
     }
 
     // 匹配绣线颜色-入口
     var marchColor = () => {
-      const ac = [...allColor]
-      for (const color of ac) {
-        newColors.push(marchFunc(color.split(',').map(Number)))
+      toggleShowColorBtn(false)
+      newColors.clear()
+      const _allColor = [...allColor]
+      for (const color of _allColor) {
+        newColors.add(marchFunc(color.split(',').map(Number)))
       }
+      toggleShowColorBtn(true)
+      showAllColor()
+    }
+
+    const showAllColor = () => {
+      const tbody = document.querySelector('dialog').querySelector('table').querySelector('tbody')
+      let content = ''
+
+      for (const sc of [...newColors]) {
+        const c = JSON.parse(sc)
+        const color = `rgb(${c.color.toString()})`
+        content += `<tr><td>${c.dmc}</td><td>${c.desc}</td><td>${c.color}</td><td><div class="color-block" style="background-color: ${color};"></div></td></tr>`
+      }
+      tbody.innerHTML = content
     }
 
     var donwload = () => {
