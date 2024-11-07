@@ -163,28 +163,22 @@
 
     // 控制显示颜色列表按钮
     const toggleShowColorBtn = (flag) => {
-      const cl = document.querySelector('.show-color').classList
-      const fr1 = document.querySelector('.fr-1').classList
-      const fr2 = document.querySelector('.fr-2').classList
-      const fr = document.querySelector('.fr').classList
+      const allDomClaaName = ['.show-color', '.fr-1', '.fr-2', '.fr']
+      const allDom = []
+      for (const name of allDomClaaName) {
+        allDom.push(document.querySelector(name).classList)
+      }
+
       if (flag) {
-        cl.add('show')
-        cl.remove('hide')
-        fr.add('show')
-        fr.remove('hide')
-        fr1.add('show')
-        fr1.remove('hide')
-        fr2.add('show')
-        fr2.remove('hide')
+        for (const classList of allDom) {
+          classList.add('show')
+          classList.remove('hide')
+        }
       } else {
-        cl.add('hide')
-        cl.remove('show')
-        fr1.add('hide')
-        fr.remove('show')
-        fr.add('hide')
-        fr1.remove('show')
-        fr2.add('hide')
-        fr2.remove('show')
+        for (const classList of allDom) {
+          classList.add('hide')
+          classList.remove('show')
+        }
       }
     }
 
