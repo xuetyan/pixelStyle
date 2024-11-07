@@ -72,6 +72,10 @@
     dialog .close:hover {
       color: #303133;
     }
+
+    input[type=number] {
+      width: 60px;
+    }
   </style>
 </head>
 
@@ -80,12 +84,19 @@
     <div class="mock hide"></div>
     <div class="head">
       <input type="file" accept="image/*" oninput="selectImage(event)">
-      <input class="resolutionIpt" type="number" placeholder="像素大小" oninput="changeResolution(event.target.value)">
-      <input class="multi" type="number" placeholder="缩放倍率" oninput="changeMulti(event.target.value)">
+      <label for="1">像素大小</label>
+      <input name="1" class="resolutionIpt" type="number" placeholder="像素大小"
+        oninput="changeResolution(event.target.value)">
+      <label for="2">缩放倍率</label>
+      <input name="2" class="multi" type="number" placeholder="缩放倍率" oninput="changeMulti(event.target.value)">
       <button onclick="getPixivImage()">生成像素风</button>
       <button onclick="marchColor()">开始匹配颜色</button>
       <button onclick="donwload()">下载图片</button>
       <button class="show-color show" onclick="showColorList(true)">显示使用到的颜色</button>
+
+      <label class="fr" for="3">输入坐标 展示对应的绣线颜色和编号</label>
+      <input class="fr-1" name="3" type="text" placeholder="坐标 eg: 1,2" oninput="searchColor(event.target.value)">
+      <span class="find-result fr-2"></span>
     </div>
 
     <div class="body">
@@ -125,6 +136,13 @@
     // 匹配颜色列表后的颜色
     const newColors = new Set()
 
+    const imageData = {
+      with: 0,
+      height: 0,
+      data: [], // 像素图数据
+      matchResult: {}, // 原颜色: 绣线信息
+    }
+
     document.querySelector('.resolutionIpt').value = resolution
     document.querySelector('.multi').value = multify
 
@@ -146,12 +164,27 @@
     // 控制显示颜色列表按钮
     const toggleShowColorBtn = (flag) => {
       const cl = document.querySelector('.show-color').classList
+      const fr1 = document.querySelector('.fr-1').classList
+      const fr2 = document.querySelector('.fr-2').classList
+      const fr = document.querySelector('.fr').classList
       if (flag) {
         cl.add('show')
         cl.remove('hide')
+        fr.add('show')
+        fr.remove('hide')
+        fr1.add('show')
+        fr1.remove('hide')
+        fr2.add('show')
+        fr2.remove('hide')
       } else {
         cl.add('hide')
         cl.remove('show')
+        fr1.add('hide')
+        fr.remove('show')
+        fr.add('hide')
+        fr1.remove('show')
+        fr2.add('hide')
+        fr2.remove('show')
       }
     }
 
@@ -186,8 +219,8 @@
       myImage.src = url
       myImage.setAttribute('crossOrigin', 'anonymous')
       myImage.onload = function () {
-        myCanvas.width = myImage.width * multi
-        myCanvas.height = myImage.height * multi
+        imageData.width = myCanvas.width = myImage.width * multi
+        imageData.height = myCanvas.height = myImage.height * multi
         // 显示原图分辨率
         document.querySelector('.image-title').innerText = document.querySelector('.image-title').innerText.replace(/([a-zA-Z]+).*/g, '$1') + ` ${myImage.width}*${myImage.height}`
         // canvas分辨率
@@ -217,6 +250,7 @@
           }
         }
 
+        imageData.data = allDots
         const newData = allDots.flat()
         for (let index = 0; index < cvData.data.length; index++) {
           cvData.data[index] = newData[index]
@@ -269,6 +303,7 @@
       for (const e of colors) {
         const _distance = calc(c, e.color)
         if (_distance === 0) {
+          imageData.matchResult[c] = e
           return JSON.stringify(e)
         }
         if (_distance < distance) {
@@ -276,6 +311,7 @@
           r = e
         }
       }
+      imageData.matchResult[c] = r
       return JSON.stringify(r)
     }
 
@@ -283,6 +319,7 @@
     var marchColor = () => {
       toggleShowColorBtn(false)
       newColors.clear()
+      imageData.matchResult = {}
       const _allColor = [...allColor]
       for (const color of _allColor) {
         newColors.add(marchFunc(color.split(',').map(Number)))
@@ -301,6 +338,24 @@
         content += `<tr><td>${c.dmc}</td><td>${c.desc}</td><td>${c.color}</td><td><div class="color-block" style="background-color: ${color};"></div></td></tr>`
       }
       tbody.innerHTML = content
+    }
+
+    // 按坐标查询颜色
+    const searchColor = (val) => {
+      const position = val.replaceAll(' ', '').split(',')
+      const dom = document.querySelector('.find-result')
+
+      if (position && position.length === 2) {
+        const i = imageData.with * +position[1] + +position[0]
+        dot = imageData.data[i].toString()
+        const info = imageData.matchResult[dot]
+
+        const r = `<span style="color: rgba(${dot})">${info.desc}</span>`
+        dom.innerHTML = r
+      } else {
+        dom.cssText = 'color: red'
+        dom.innerText = '格式有误'
+      }
     }
 
     var donwload = () => {
